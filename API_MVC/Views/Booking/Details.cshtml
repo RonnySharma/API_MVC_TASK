@@ -1,0 +1,30 @@
+﻿@model IEnumerable<API_MVC.Models.Bookings>
+@{
+    ViewData["Title"] = "Details";
+}
+
+@* <h1>Details</h1>
+ *@
+<table class="table">
+    <thead>
+        <tr>
+            <th>National Park</th>
+            <th>Booking Status</th>
+            <th>Number of Persons</th>
+            <th>Count</th>
+            <th>Category</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var booking in Model)
+        {
+            <tr>
+                <td>@booking.NationalParkId</td>
+                <td>@booking.BookingStatus</td>
+                <td>@booking.NumberOfPerson</td>
+                <td>@booking.Count</td>
+                <td>@booking.SelectedCategory</td>
+            </tr>
+        }
+    </tbody>
+</table>

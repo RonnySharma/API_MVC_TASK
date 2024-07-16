@@ -1,0 +1,208 @@
+﻿@model API_MVC.Models.Bookings
+@using Microsoft.Extensions.Options
+@inject IOptions<API_MVC.StripeSettings> Stripe;
+
+@{
+    ViewData["Title"] = "Upsert";
+    var title = Model.Id != 0 ? "Edit" : "Enter Your Details";
+    var saveUpdate = Model.Id != 0 ? "Update" : "Save Details";
+}
+
+<form method="post" enctype="multipart/form-data">
+    @if (Model.Id != 0)
+    {
+        <input type="hidden" asp-for="Id" />
+    }
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row border p-2 m-2">
+        <div class="col-10 border-bottom">
+            <h2 class="text-primary">@title</h2>
+        </div>
+        <div class="col-8">
+            <div class="form-group row p-2 m-2">
+                <div class="col-4">
+                    <label asp-for="Name"></label>
+                </div>
+                <div class="col-8">
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row p-2 m-2">
+                <div class="col-4">
+                    <label asp-for="NationalParkId">National Park ID</label>
+                </div>
+                <div class="col-8">
+                    <input type="text" asp-for="NationalParkId" class="form-control" readonly />
+                    <span asp-validation-for="NationalParkId" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row p-2 m-2">
+                <div class="col-4">
+                    <label asp-for="Address"></label>
+                </div>
+                <div class="col-8">
+                    <input asp-for="Address" class="form-control" />
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row p-2 m-2">
+                <div class="col-4">
+                    <label asp-for="Email"></label>
+                </div>
+                <div class="col-8">
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row p-2 m-2">
+                <div class="col-4">
+                    <label asp-for="PhoneNumber"></label>
+                </div>
+                <div class="col-8">
+                    <input asp-for="PhoneNumber" class="form-control" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row p-2 m-2">
+                <div class="col-4">
+                    <label asp-for="Date"></label>
+                </div>
+                <div class="col-8">
+                    <input asp-for="Date" class="form-control" type="date" />
+                    <span asp-validation-for="Date" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row p-2 m-2">
+                <div class="col-4">
+                    <label asp-for="BookingStatus">Booking Status</label>
+                </div>
+                <div class="col-8">
+                    <input type="checkbox" asp-for="BookingStatus" id="BookingStatus" />
+                    <span asp-validation-for="BookingStatus" class="text-danger"></span>
+                    <label for="BookingStatus" class="ml-2">
+                        @if (Model.BookingStatus)
+                        {
+                            <span>Confirmed</span>
+                        }
+                        else
+                        {
+                            <span>Pending</span>
+                        }
+                    </label>
+                </div>
+            </div>
+            <div class="form-group row p-2 m-2">
+                <div class="col-4">
+                    <label>Number Of Persons</label>
+                </div>
+                <div class="col-8">
+                    <input type="text" asp-for="NumberOfPerson" id="NumberOfPerson" class="form-control" onchange="updateTotal()" />
+                    <span asp-validation-for="NumberOfPerson" class="text-danger"></span>
+                    <div class="col-11">
+                        <label>Ticket Price: Based On Category</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row p-2 m-2">
+                <div class="col-4">
+                    <label>Select Category</label>
+                </div>
+                <div class="col-8">
+                    <select asp-for="SelectedCategory" class="form-control" onchange="updateTotal()">
+                        <option value="CategoryA">Category A - 300</option>
+                        <option value="CategoryB">Category B - 200</option>
+                        <option value="CategoryC">Category C - 100</option>
+                    </select>
+                    <span asp-validation-for="SelectedCategory" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row p-2 m-2">
+                <div class="col-4">
+                    <label>Total</label>
+                </div>
+                <div class="col-8">
+                    <input type="text" asp-for="Count" class="form-control" readonly />
+                    <span asp-validation-for="Count" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="form-group row p-2 m-2">
+                <div class="col-4 offset-4">
+                    <button type="submit" class="btn btn-info form-control">Book Park</button>
+                </div>
+                <div class="col-4">
+                    <a asp-action="Index" class="btn btn-dark form-control">
+                        Back To List
+                    </a>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                @{
+                    var orderTotalAmount = Model.Count * 100; 
+                }
+                <script src="https://checkout.stripe.com/checkout.js"
+                        class="stripe-button"
+                        data-key="@Stripe.Value.Publishablekey"
+                        data-amount="@orderTotalAmount"
+                        data-name="Ecomm Project"
+                        data-description="Park Booking"
+                        data-locale="auto"
+                        data-label="Place Order"
+                        data-allow-remember-me="false"
+                        data-image="https://stripe.com/img/documentation/checkout/marketplace.png">
+                </script>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts
+{
+    <script>
+        function updateTotal() {
+            var numberOfPersons = document.getElementById("NumberOfPerson").value;
+            var selectedCategory = document.getElementById("SelectedCategory").value;
+            var numberOfPersons = parseInt(document.getElementById("NumberOfPerson").value, 10);
+            if (numberOfPersons >= 5) {
+                alert("NumberOfPerson must be less than 5.");
+                document.getElementById("NumberOfPerson").value = '';
+            }
+        
+            var pricePerPerson = 500; // Default price
+            if (selectedCategory === "CategoryA")  {
+                if (numberOfPersons >= 5) 
+                {
+                    alert("NumberOfPerson must be less than 5.");
+                    event.preventDefault();
+                }
+                pricePerPerson = 300;
+                 // Price for Category A
+
+            } else if (selectedCategory === "CategoryB" ) {
+                pricePerPerson = 200; // Price for Category B
+            } else if (selectedCategory === "CategoryC") {
+                pricePerPerson = 100; // Price for Category C
+            }
+            if (NumberOfPerson)
+            var total = numberOfPersons * pricePerPerson;
+            document.getElementById("Count").value = total;
+        }
+
+        // function validateNumberOfPersons() {
+        //     var numberOfPersons = parseInt(document.getElementById("NumberOfPerson").value, 10);
+        //     if (numberOfPersons >= 5) {
+        //         alert("NumberOfPerson must be less than 5.");
+        //         document.getElementById("NumberOfPerson").value = ''; // Reset the value
+        //     }
+        // }
+
+    </script>
+
+}
+<script>
+    document.getElementById('BookingStatus').addEventListener('change', function () {
+        var statusLabel = document.querySelector('label[for="BookingStatus"] span');
+        statusLabel.textContent = this.checked ? "Confirmed" : "Pending";
+    });
+</script>
+
